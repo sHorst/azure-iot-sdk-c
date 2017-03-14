@@ -64,10 +64,15 @@ if(${use_amqp})
             add_subdirectory(iothubclient_amqp_ws_e2e)
         endif()
     endif()
-    
     if (${run_longhaul_tests})
         add_subdirectory(longhaul_tests)
     endif()
+endif()
+
+if (${run_e2e_tests} OR ${nuget_e2e_tests})
+      if(LINUX)
+    add_subdirectory(iothubclient_badnetwork_e2e)
+  endif()
 endif()
 
 add_subdirectory(version_ut)
