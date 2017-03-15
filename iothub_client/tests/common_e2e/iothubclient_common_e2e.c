@@ -9,9 +9,9 @@
 #include <stdlib.h>
 #include <stddef.h>
 #include <string.h>
+#include "umock_c.h"
 #endif
 
-#include "umock_c.h"
 #include "testrunnerswitcher.h"
 
 #include "iothub_client.h"
