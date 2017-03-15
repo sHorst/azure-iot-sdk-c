@@ -70,9 +70,7 @@ if(${use_amqp})
 endif()
 
 if (${run_e2e_tests} OR ${nuget_e2e_tests})
-      if(LINUX)
     add_subdirectory(iothubclient_badnetwork_e2e)
-  endif()
 endif()
 
 add_subdirectory(version_ut)

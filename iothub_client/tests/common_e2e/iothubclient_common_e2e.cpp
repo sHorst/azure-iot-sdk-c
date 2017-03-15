@@ -6,6 +6,7 @@
 #include <cstddef>
 #include <cstdbool>
 #else
+#include "umock_c.h"
 #include <stdlib.h>
 #include <stddef.h>
 #include <stdbool.h>
@@ -56,6 +57,7 @@ typedef struct EXPECTED_SEND_DATA_TAG
     bool wasFound;
     bool dataWasRecv;
     LOCK_HANDLE lock;
+    IOTHUB_MESSAGE_HANDLE msgHandle;
 } EXPECTED_SEND_DATA;
 
 typedef struct EXPECTED_RECEIVE_DATA_TAG
@@ -63,35 +65,6 @@ typedef struct EXPECTED_RECEIVE_DATA_TAG
     bool wasFound;
     LOCK_HANDLE lock; /*needed to protect this structure*/
 } EXPECTED_RECEIVE_DATA;
-
-/*this function wait for 30 seconds only before 31.10.2016*/
-static void wait30seconds(void)
-{
-    struct tm ten_31_2016;
-    ten_31_2016.tm_year = 2016 - 1900;
-    ten_31_2016.tm_mon = 9;
-    ten_31_2016.tm_mday = 31;
-    ten_31_2016.tm_hour = 0;
-    ten_31_2016.tm_min = 0;
-    ten_31_2016.tm_sec = 0;
-    ten_31_2016.tm_isdst = -1;
-    time_t deadline = mktime(&ten_31_2016);
-    if (deadline == (time_t)-1)
-    {
-        LogError("mktime failed");
-    }
-    else
-    {
-        time_t now = time(NULL);
-        if (difftime(deadline, now) > 0)
-        {
-            /*sleep 30 seconds*/
-            LogInfo("sleeping for 30 seconds");
-            ThreadAPI_Sleep(30 * 1000);
-            LogInfo("done sleeping!!!");
-        }
-    }
-}
 
 static void openCompleteCallback(void* context)
 {
@@ -285,6 +258,7 @@ static void ReceiveUserContext_Destroy(EXPECTED_RECEIVE_DATA* data)
 static EXPECTED_SEND_DATA* EventData_Create(void)
 {
     EXPECTED_SEND_DATA* result = (EXPECTED_SEND_DATA*)malloc(sizeof(EXPECTED_SEND_DATA));
+    memset(result, 0, sizeof(*result));
     if (result != NULL)
     {
         if ((result->lock = Lock_Init()) == NULL)
@@ -325,11 +299,15 @@ static void EventData_Destroy(EXPECTED_SEND_DATA* data)
         {
             free((void*)data->expectedString);
         }
+        if (data->msgHandle != NULL)
+        {
+            IoTHubMessage_Destroy(data->msgHandle);
+        }
         free(data);
     }
 }
 
-extern "C" void e2e_init(void)
+void e2e_init(void)
 {
     int result = platform_init();
     ASSERT_ARE_EQUAL_WITH_MSG(int, 0, result, "Platform init failed");
@@ -338,7 +316,7 @@ extern "C" void e2e_init(void)
     platform_init();
 }
 
-extern "C" void e2e_deinit(void)
+void e2e_deinit(void)
 {
     IoTHubAccount_deinit(g_iothubAcctInfo);
     // Need a double deinit
@@ -346,53 +324,60 @@ extern "C" void e2e_deinit(void)
     platform_deinit();
 }
 
-
-static void send_event_test(IOTHUB_PROVISIONED_DEVICE* deviceToUse, IOTHUB_CLIENT_TRANSPORT_PROVIDER protocol)
+static IOTHUB_CLIENT_HANDLE client_connect_to_hub(IOTHUB_PROVISIONED_DEVICE* deviceToUse, IOTHUB_CLIENT_TRANSPORT_PROVIDER protocol)
 {
-
-    // arrange
     IOTHUB_CLIENT_HANDLE iotHubClientHandle;
+    IOTHUB_CLIENT_RESULT result;
+
+    iotHubClientHandle = IoTHubClient_CreateFromConnectionString(deviceToUse->connectionString, protocol);
+    ASSERT_IS_NOT_NULL_WITH_MSG(iotHubClientHandle, "Could not create IoTHubClient");
+
+    if (deviceToUse->howToCreate == IOTHUB_ACCOUNT_AUTH_X509) {
+        result = IoTHubClient_SetOption(iotHubClientHandle, OPTION_X509_CERT, deviceToUse->certificate);
+        ASSERT_ARE_EQUAL_WITH_MSG(IOTHUB_CLIENT_RESULT, IOTHUB_CLIENT_OK, result, "Could not set the device x509 certificate");
+        result = IoTHubClient_SetOption(iotHubClientHandle, OPTION_X509_PRIVATE_KEY, deviceToUse->primaryAuthentication);
+        ASSERT_ARE_EQUAL_WITH_MSG(IOTHUB_CLIENT_RESULT, IOTHUB_CLIENT_OK, result, "Could not set the device x509 privateKey");
+    }
+
+    // Turn on Log 
+    bool trace = true;
+    (void)IoTHubClient_SetOption(iotHubClientHandle, OPTION_LOG_TRACE, &trace);
+    (void)IoTHubClient_SetOption(iotHubClientHandle, "TrustedCerts", certificates);
+
+    return iotHubClientHandle;
+}
+
+EXPECTED_SEND_DATA *client_create_and_send_d2c(IOTHUB_CLIENT_HANDLE iotHubClientHandle)
+{
     IOTHUB_MESSAGE_HANDLE msgHandle;
-    time_t beginOperation, nowTime;
+    IOTHUB_CLIENT_RESULT result;
 
     EXPECTED_SEND_DATA* sendData = EventData_Create();
     ASSERT_IS_NOT_NULL_WITH_MSG(sendData, "Could not create the EventData associated with the event to be sent");
 
-    // Send the Event
+    msgHandle = IoTHubMessage_CreateFromByteArray((const unsigned char*)sendData->expectedString, strlen(sendData->expectedString));
+    ASSERT_IS_NOT_NULL_WITH_MSG(msgHandle, "Could not create the D2C message to be sent");
+
+    MAP_HANDLE mapHandle = IoTHubMessage_Properties(msgHandle);
+    for (size_t i = 0; i < MSG_PROP_COUNT; i++)
     {
-        // Create the IoT Hub Data
-        IOTHUB_CLIENT_RESULT result;
-        iotHubClientHandle = IoTHubClient_CreateFromConnectionString(deviceToUse->connectionString, protocol);
-        ASSERT_IS_NOT_NULL_WITH_MSG(iotHubClientHandle, "Could not create IoTHubClient");
-
-        if (deviceToUse->howToCreate == IOTHUB_ACCOUNT_AUTH_X509) {
-            result = IoTHubClient_SetOption(iotHubClientHandle, OPTION_X509_CERT, deviceToUse->certificate);
-            ASSERT_ARE_EQUAL_WITH_MSG(IOTHUB_CLIENT_RESULT, IOTHUB_CLIENT_OK, result, "Could not set the device x509 certificate");
-            result = IoTHubClient_SetOption(iotHubClientHandle, OPTION_X509_PRIVATE_KEY, deviceToUse->primaryAuthentication);
-            ASSERT_ARE_EQUAL_WITH_MSG(IOTHUB_CLIENT_RESULT, IOTHUB_CLIENT_OK, result, "Could not set the device x509 privateKey");
-        }
-
-        // Turn on Log 
-        bool trace = true;
-        (void)IoTHubClient_SetOption(iotHubClientHandle, OPTION_LOG_TRACE, &trace);
-        (void)IoTHubClient_SetOption(iotHubClientHandle, "TrustedCerts", certificates);
-
-        msgHandle = IoTHubMessage_CreateFromByteArray((const unsigned char*)sendData->expectedString, strlen(sendData->expectedString));
-        ASSERT_IS_NOT_NULL_WITH_MSG(msgHandle, "Could not create the D2C message to be sent");
-
-        MAP_HANDLE mapHandle = IoTHubMessage_Properties(msgHandle);
-        for (size_t i = 0; i < MSG_PROP_COUNT; i++)
+        if (Map_AddOrUpdate(mapHandle, MSG_PROP_KEYS[i], MSG_PROP_VALS[i]) != MAP_OK)
         {
-            if (Map_AddOrUpdate(mapHandle, MSG_PROP_KEYS[i], MSG_PROP_VALS[i]) != MAP_OK)
-            {
-                (void)printf("ERROR: Map_AddOrUpdate failed for property %zu!\r\n", i);
-            }
+            (void)printf("ERROR: Map_AddOrUpdate failed for property %zu!\r\n", i);
         }
-
-        // act
-        result = IoTHubClient_SendEventAsync(iotHubClientHandle, msgHandle, ReceiveConfirmationCallback, sendData);
-        ASSERT_ARE_EQUAL_WITH_MSG(IOTHUB_CLIENT_RESULT, IOTHUB_CLIENT_OK, result, "SendEventAsync failed");
     }
+
+    // act
+    result = IoTHubClient_SendEventAsync(iotHubClientHandle, msgHandle, ReceiveConfirmationCallback, sendData);
+    ASSERT_ARE_EQUAL_WITH_MSG(IOTHUB_CLIENT_RESULT, IOTHUB_CLIENT_OK, result, "SendEventAsync failed");
+
+    return sendData;
+}
+
+bool client_wait_for_confirmation(EXPECTED_SEND_DATA *sendData)
+{
+    time_t beginOperation, nowTime;
+    bool result = false;
 
     beginOperation = time(NULL);
     while (
@@ -422,10 +407,32 @@ static void send_event_test(IOTHUB_PROVISIONED_DEVICE* deviceToUse, IOTHUB_CLIEN
     }
     else
     {
-        ASSERT_IS_TRUE_WITH_MSG(sendData->dataWasRecv, "Failure sending data to IotHub"); // was received by the callback...
+        result = sendData->dataWasRecv;
         (void)Unlock(sendData->lock);
     }
 
+    return result;
+
+}
+
+static void send_event_test(IOTHUB_PROVISIONED_DEVICE* deviceToUse, IOTHUB_CLIENT_TRANSPORT_PROVIDER protocol)
+{
+
+    // arrange
+    IOTHUB_CLIENT_HANDLE iotHubClientHandle;
+    EXPECTED_SEND_DATA* sendData;
+
+    // Create the IoT Hub Data
+    iotHubClientHandle = client_connect_to_hub(deviceToUse, protocol);
+
+    // Send the Event from the client
+    sendData = client_create_and_send_d2c(iotHubClientHandle);
+
+    // Wait for confirmation that the event was recevied
+    bool dataWasRecv = client_wait_for_confirmation(sendData);
+    ASSERT_IS_TRUE_WITH_MSG(dataWasRecv, "Failure sending data to IotHub"); // was received by the callback...
+
+    // close the client connection
     IoTHubClient_Destroy(iotHubClientHandle);
 
     /* guess who */
@@ -444,19 +451,18 @@ static void send_event_test(IOTHUB_PROVISIONED_DEVICE* deviceToUse, IOTHUB_CLIEN
     // assert
     ASSERT_IS_TRUE_WITH_MSG(sendData->wasFound, "Failure retrieving data that was sent to eventhub"); // was found is written by the callback...
 
-                                                                                                      // cleanup
-    IoTHubMessage_Destroy(msgHandle);
+    // cleanup
     EventData_Destroy(sendData);
 
 
 }
 
-extern "C" void e2e_send_event_test_sas(IOTHUB_CLIENT_TRANSPORT_PROVIDER protocol)
+void e2e_send_event_test_sas(IOTHUB_CLIENT_TRANSPORT_PROVIDER protocol)
 {
     send_event_test(IoTHubAccount_GetSASDevice(g_iothubAcctInfo), protocol);
 }
 
-extern "C" void e2e_send_event_test_x509(IOTHUB_CLIENT_TRANSPORT_PROVIDER protocol)
+void e2e_send_event_test_x509(IOTHUB_CLIENT_TRANSPORT_PROVIDER protocol)
 {
     send_event_test(IoTHubAccount_GetX509Device(g_iothubAcctInfo), protocol);
 }
@@ -529,8 +535,6 @@ static void recv_message_test(IOTHUB_PROVISIONED_DEVICE* deviceToUse, IOTHUB_CLI
     result = IoTHubClient_SetMessageCallback(iotHubClientHandle, ReceiveMessageCallback, receiveUserContext);
     ASSERT_ARE_EQUAL_WITH_MSG(IOTHUB_CLIENT_RESULT, IOTHUB_CLIENT_OK, result, "Setting message callback failed");
 
-    wait30seconds();
-
     // act
     iotHubMessagingResult = IoTHubMessaging_SendAsync(iotHubMessagingHandle, deviceToUse->deviceId, messageHandle, sendCompleteCallback, receiveUserContext);
     ASSERT_ARE_EQUAL_WITH_MSG(int, IOTHUB_MESSAGING_OK, iotHubMessagingResult, "IoTHubMessaging_SendAsync failed, could not send C2D message to the device");
@@ -568,12 +572,13 @@ static void recv_message_test(IOTHUB_PROVISIONED_DEVICE* deviceToUse, IOTHUB_CLI
     IoTHubClient_Destroy(iotHubClientHandle);
     ReceiveUserContext_Destroy(receiveUserContext);
 }
-extern "C" void e2e_recv_message_test_sas(IOTHUB_CLIENT_TRANSPORT_PROVIDER protocol)
+void e2e_recv_message_test_sas(IOTHUB_CLIENT_TRANSPORT_PROVIDER protocol)
 {
     recv_message_test(IoTHubAccount_GetSASDevice(g_iothubAcctInfo), protocol);
 }
 
-extern "C" void e2e_recv_message_test_x509(IOTHUB_CLIENT_TRANSPORT_PROVIDER protocol)
+void e2e_recv_message_test_x509(IOTHUB_CLIENT_TRANSPORT_PROVIDER protocol)
 {
     recv_message_test(IoTHubAccount_GetX509Device(g_iothubAcctInfo), protocol);
 }
+

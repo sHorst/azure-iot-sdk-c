@@ -8,19 +8,27 @@ compileAsC11()
 set(theseTestsName iothubclient_badnetwork_e2e)
 
 set(${theseTestsName}_test_files
-        ${theseTestsName}.c
+    ${theseTestsName}.c
+    ../common_e2e/iothubclient_common_e2e.c
 )
+
 
 set(${theseTestsName}_nuget_c_files
         ${theseTestsName}.c
+     ../common_e2e/iothubclient_common_e2e.c
+     ../../../certs/certs.c
 )
 
 set(${theseTestsName}_c_files
+    ../../../certs/certs.c
 )
 
 set(${theseTestsName}_h_files
+    ../common_e2e/iothubclient_common_e2e.h
+
 )
 
+include_directories(../common_e2e)
 include_directories(${IOTHUB_TEST_INC_FOLDER})
 include_directories(${IOTHUB_SERVICE_CLIENT_INC_FOLDER})
 
