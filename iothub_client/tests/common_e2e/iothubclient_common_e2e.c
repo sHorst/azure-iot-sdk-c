@@ -457,15 +457,8 @@ static void send_event_test(IOTHUB_PROVISIONED_DEVICE* deviceToUse, IOTHUB_CLIEN
     /* guess who */
     (void)platform_init();
 
-    {
-        IOTHUB_TEST_HANDLE iotHubTestHandle = IoTHubTest_Initialize(IoTHubAccount_GetEventHubConnectionString(g_iothubAcctInfo), IoTHubAccount_GetIoTHubConnString(g_iothubAcctInfo), deviceToUse->deviceId, IoTHubAccount_GetEventhubListenName(g_iothubAcctInfo), IoTHubAccount_GetEventhubAccessKey(g_iothubAcctInfo), IoTHubAccount_GetSharedAccessSignature(g_iothubAcctInfo), IoTHubAccount_GetEventhubConsumerGroup(g_iothubAcctInfo));
-        ASSERT_IS_NOT_NULL_WITH_MSG(iotHubTestHandle, "Could not initialize IoTHubTest in order to listen for events");
-
-        IOTHUB_TEST_CLIENT_RESULT result = IoTHubTest_ListenForEventForMaxDrainTime(iotHubTestHandle, IoTHubCallback, IoTHubAccount_GetIoTHubPartitionCount(g_iothubAcctInfo), sendData);
-        ASSERT_ARE_EQUAL_WITH_MSG(IOTHUB_TEST_CLIENT_RESULT, IOTHUB_TEST_CLIENT_OK, result, "Listening for the event failed");
-
-        IoTHubTest_Deinit(iotHubTestHandle);
-    }
+    // Waigt for the message to arrive
+    service_wait_for_d2c_event_arrival(deviceToUse, sendData);
 
     // assert
     ASSERT_IS_TRUE_WITH_MSG(sendData->wasFound, "Failure retrieving data that was sent to eventhub"); // was found is written by the callback...
@@ -526,6 +519,34 @@ static void service_send_c2d(IOTHUB_MESSAGING_CLIENT_HANDLE iotHubMessagingHandl
     ASSERT_ARE_EQUAL_WITH_MSG(int, IOTHUB_MESSAGING_OK, iotHubMessagingResult, "IoTHubMessaging_SendAsync failed, could not send C2D message to the device");
 }
 
+
+void client_wait_for_c2d_event_arrival(EXPECTED_RECEIVE_DATA* receiveUserContext)
+{
+    time_t beginOperation, nowTime;
+
+    beginOperation = time(NULL);
+    while (
+        (nowTime = time(NULL)), (difftime(nowTime, beginOperation) < MAX_CLOUD_TRAVEL_TIME) //time box
+        )
+    {
+        if (Lock(receiveUserContext->lock) != LOCK_OK)
+        {
+            ASSERT_FAIL("unable to lock");
+        }
+        else
+        {
+            if (receiveUserContext->wasFound)
+            {
+                (void)Unlock(receiveUserContext->lock);
+                break;
+            }
+            (void)Unlock(receiveUserContext->lock);
+        }
+        ThreadAPI_Sleep(100);
+    }
+
+}
+
 static void recv_message_test(IOTHUB_PROVISIONED_DEVICE* deviceToUse, IOTHUB_CLIENT_TRANSPORT_PROVIDER protocol)
 {
     // arrange
@@ -537,8 +558,6 @@ static void recv_message_test(IOTHUB_PROVISIONED_DEVICE* deviceToUse, IOTHUB_CLI
     IOTHUB_CLIENT_RESULT result;
 
     EXPECTED_RECEIVE_DATA* receiveUserContext;
-
-    time_t beginOperation, nowTime;
 
     // Create device client
     iotHubClientHandle = client_connect_to_hub(deviceToUse, protocol);
@@ -563,26 +582,8 @@ static void recv_message_test(IOTHUB_PROVISIONED_DEVICE* deviceToUse, IOTHUB_CLI
     // Send message
     service_send_c2d(iotHubMessagingHandle, receiveUserContext, deviceToUse);
 
-    beginOperation = time(NULL);
-    while (
-        (nowTime = time(NULL)), (difftime(nowTime, beginOperation) < MAX_CLOUD_TRAVEL_TIME) //time box
-        )
-    {
-        if (Lock(receiveUserContext->lock) != LOCK_OK)
-        {
-            ASSERT_FAIL("unable to lock");
-        }
-        else
-        {
-            if (receiveUserContext->wasFound)
-            {
-                (void)Unlock(receiveUserContext->lock);
-                break;
-            }
-            (void)Unlock(receiveUserContext->lock);
-        }
-        ThreadAPI_Sleep(100);
-    }
+    // wait for message to arrive on client
+    client_wait_for_c2d_event_arrival(receiveUserContext);
 
     // assert
     ASSERT_IS_TRUE_WITH_MSG(receiveUserContext->wasFound, "Failure retrieving data from C2D"); // was found is written by the callback...
