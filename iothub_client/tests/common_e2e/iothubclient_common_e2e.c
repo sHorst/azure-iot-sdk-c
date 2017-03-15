@@ -86,7 +86,7 @@ static void sendCompleteCallback(void* context, IOTHUB_MESSAGING_RESULT messagin
 
 static int IoTHubCallback(void* context, const char* data, size_t size)
 {
-    size;
+    (void)size;
     int result = 0; // 0 means "keep processing"
     EXPECTED_SEND_DATA* expectedData = (EXPECTED_SEND_DATA*)context;
     if (expectedData != NULL)
@@ -113,7 +113,7 @@ static int IoTHubCallback(void* context, const char* data, size_t size)
 
 static void ReceiveConfirmationCallback(IOTHUB_CLIENT_CONFIRMATION_RESULT result, void* userContextCallback)
 {
-    result;
+    (void)result;
     EXPECTED_SEND_DATA* expectedData = (EXPECTED_SEND_DATA*)userContextCallback;
     if (expectedData != NULL)
     {
