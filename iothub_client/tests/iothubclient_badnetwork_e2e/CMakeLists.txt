@@ -10,6 +10,7 @@ set(theseTestsName iothubclient_badnetwork_e2e)
 set(${theseTestsName}_test_files
     ${theseTestsName}.c
     ../common_e2e/iothubclient_common_e2e.c
+    badnetwork.c
 )
 
 
@@ -25,7 +26,7 @@ set(${theseTestsName}_c_files
 
 set(${theseTestsName}_h_files
     ../common_e2e/iothubclient_common_e2e.h
-
+    badnetwork.h
 )
 
 include_directories(../common_e2e)
@@ -40,6 +41,7 @@ if(WIN32)
 		target_link_libraries(${theseTestsName}_dll
 			iothub_test
 			iothub_client
+			iothub_client_amqp_transport
 			iothub_client_mqtt_transport
 			iothub_service_client
 			aziotsharedutil
@@ -54,6 +56,7 @@ if(WIN32)
 		target_link_libraries(${theseTestsName}_exe
 			iothub_test
 			iothub_client
+			iothub_client_amqp_transport
 			iothub_client_mqtt_transport
 			iothub_service_client
 			aziotsharedutil
@@ -89,6 +92,7 @@ else()
 		target_link_libraries(${theseTestsName}_exe
 			iothub_test
 			iothub_client
+			iothub_client_amqp_transport
 			iothub_client_mqtt_transport
 			iothub_service_client
 			aziotsharedutil

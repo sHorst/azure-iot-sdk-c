@@ -42,7 +42,7 @@ const char* MSG_PROP_KEYS[MSG_PROP_COUNT] = { "Key1", "Key2", "Key3" };
 const char* MSG_PROP_VALS[MSG_PROP_COUNT] = { "Val1", "Val2", "Val3" };
 
 static size_t g_iotHubTestId = 0;
-static IOTHUB_ACCOUNT_INFO_HANDLE g_iothubAcctInfo = NULL;
+IOTHUB_ACCOUNT_INFO_HANDLE g_iothubAcctInfo = NULL;
 
 #define IOTHUB_COUNTER_MAX           10
 #define IOTHUB_TIMEOUT_SEC           1000
@@ -330,7 +330,7 @@ void e2e_deinit(void)
     platform_deinit();
 }
 
-static IOTHUB_CLIENT_HANDLE client_connect_to_hub(IOTHUB_PROVISIONED_DEVICE* deviceToUse, IOTHUB_CLIENT_TRANSPORT_PROVIDER protocol)
+IOTHUB_CLIENT_HANDLE client_connect_to_hub(IOTHUB_PROVISIONED_DEVICE* deviceToUse, IOTHUB_CLIENT_TRANSPORT_PROVIDER protocol)
 {
     IOTHUB_CLIENT_HANDLE iotHubClientHandle;
     IOTHUB_CLIENT_RESULT result;

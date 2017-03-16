@@ -5,10 +5,13 @@
 #define IOTHUBCLIENT_COMMON_E2E_H
 
 #include "iothub_client_ll.h"
+#include "iothub_account.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+extern IOTHUB_ACCOUNT_INFO_HANDLE g_iothubAcctInfo;
 
 extern void e2e_init(void);
 extern void e2e_deinit(void);
