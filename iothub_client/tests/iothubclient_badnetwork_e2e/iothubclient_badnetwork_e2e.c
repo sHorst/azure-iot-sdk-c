@@ -5,6 +5,8 @@
 #include "badnetwork.h"
 #include "iothubtest.h"
 #include "iothubtransportamqp.h"
+#include "iothubtransporthttp.h"
+#include "iothubtransportmqtt.h"
 #include "iothubclient_common_e2e.h"
 
 static TEST_MUTEX_HANDLE g_dllByDll;
@@ -27,9 +29,19 @@ BEGIN_TEST_SUITE(iothubclient_badnetwork_e2e)
     {
     }
 
-    TEST_FUNCTION(IotHub_BadNetwork_D2C_SingleMessage_DisconnectedBeforeClientCreated_ReconnectedAfterMessageSent)
+    TEST_FUNCTION(IotHub_BadNetwork_D2C_SingleMessage_DisconnectedBeforeClientCreated_ReconnectedAfterMessageSent_AMQP)
     {
         disconnect_create_send_reconnect(IoTHubAccount_GetSASDevice(g_iothubAcctInfo), AMQP_Protocol);
+    }
+
+    TEST_FUNCTION(IotHub_BadNetwork_D2C_SingleMessage_DisconnectedBeforeClientCreated_ReconnectedAfterMessageSent_MQTT)
+    {
+        disconnect_create_send_reconnect(IoTHubAccount_GetSASDevice(g_iothubAcctInfo), MQTT_Protocol);
+    }
+
+    TEST_FUNCTION(IotHub_BadNetwork_D2C_SingleMessage_DisconnectedBeforeClientCreated_ReconnectedAfterMessageSent_HTTP)
+    {
+        disconnect_create_send_reconnect(IoTHubAccount_GetSASDevice(g_iothubAcctInfo), HTTP_Protocol);
     }
 
     TEST_FUNCTION(IotHub_BadNetwork_D2C_MultipleMessages_DisconnectedAfterFirstConfirmmation_Reconnected30SecondsLater)

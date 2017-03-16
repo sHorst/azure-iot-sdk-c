@@ -313,6 +313,7 @@ static void EventData_Destroy(EXPECTED_SEND_DATA* data)
     }
 }
 
+
 void e2e_init(void)
 {
     int result = platform_init();
@@ -353,7 +354,7 @@ IOTHUB_CLIENT_HANDLE client_connect_to_hub(IOTHUB_PROVISIONED_DEVICE* deviceToUs
     return iotHubClientHandle;
 }
 
-EXPECTED_SEND_DATA *client_create_and_send_d2c(IOTHUB_CLIENT_HANDLE iotHubClientHandle)
+D2C_MESSAGE_HANDLE client_create_and_send_d2c(IOTHUB_CLIENT_HANDLE iotHubClientHandle)
 {
     IOTHUB_MESSAGE_HANDLE msgHandle;
     IOTHUB_CLIENT_RESULT result;
@@ -379,13 +380,14 @@ EXPECTED_SEND_DATA *client_create_and_send_d2c(IOTHUB_CLIENT_HANDLE iotHubClient
     result = IoTHubClient_SendEventAsync(iotHubClientHandle, msgHandle, ReceiveConfirmationCallback, sendData);
     ASSERT_ARE_EQUAL_WITH_MSG(IOTHUB_CLIENT_RESULT, IOTHUB_CLIENT_OK, result, "SendEventAsync failed");
 
-    return sendData;
+    return (D2C_MESSAGE_HANDLE)sendData;
 }
 
-bool client_wait_for_d2c_confirmation(EXPECTED_SEND_DATA *sendData)
+bool client_wait_for_d2c_confirmation(D2C_MESSAGE_HANDLE d2cMessage)
 {
     time_t beginOperation, nowTime;
     bool result = false;
+    EXPECTED_SEND_DATA* sendData = (EXPECTED_SEND_DATA*)d2cMessage;
 
     beginOperation = time(NULL);
     while (
@@ -423,15 +425,24 @@ bool client_wait_for_d2c_confirmation(EXPECTED_SEND_DATA *sendData)
 
 }
 
-void service_wait_for_d2c_event_arrival(IOTHUB_PROVISIONED_DEVICE* deviceToUse, EXPECTED_SEND_DATA* sendData)
+void service_wait_for_d2c_event_arrival(IOTHUB_PROVISIONED_DEVICE* deviceToUse, D2C_MESSAGE_HANDLE d2cMessage)
 {
+    EXPECTED_SEND_DATA* sendData = (EXPECTED_SEND_DATA*)d2cMessage;
+    
     IOTHUB_TEST_HANDLE iotHubTestHandle = IoTHubTest_Initialize(IoTHubAccount_GetEventHubConnectionString(g_iothubAcctInfo), IoTHubAccount_GetIoTHubConnString(g_iothubAcctInfo), deviceToUse->deviceId, IoTHubAccount_GetEventhubListenName(g_iothubAcctInfo), IoTHubAccount_GetEventhubAccessKey(g_iothubAcctInfo), IoTHubAccount_GetSharedAccessSignature(g_iothubAcctInfo), IoTHubAccount_GetEventhubConsumerGroup(g_iothubAcctInfo));
     ASSERT_IS_NOT_NULL_WITH_MSG(iotHubTestHandle, "Could not initialize IoTHubTest in order to listen for events");
 
     IOTHUB_TEST_CLIENT_RESULT result = IoTHubTest_ListenForEventForMaxDrainTime(iotHubTestHandle, IoTHubCallback, IoTHubAccount_GetIoTHubPartitionCount(g_iothubAcctInfo), sendData);
     ASSERT_ARE_EQUAL_WITH_MSG(IOTHUB_TEST_CLIENT_RESULT, IOTHUB_TEST_CLIENT_OK, result, "Listening for the event failed");
+    
+    ASSERT_IS_TRUE_WITH_MSG(sendData->wasFound, "Failure retrieving data that was sent to eventhub"); // was found is written by the callback...
 
     IoTHubTest_Deinit(iotHubTestHandle);
+}
+
+void destroy_d2c_message_handle(D2C_MESSAGE_HANDLE d2cMessage)
+{
+    EventData_Destroy((EXPECTED_SEND_DATA*)d2cMessage);
 }
 
 static void send_event_test(IOTHUB_PROVISIONED_DEVICE* deviceToUse, IOTHUB_CLIENT_TRANSPORT_PROVIDER protocol)
@@ -439,16 +450,16 @@ static void send_event_test(IOTHUB_PROVISIONED_DEVICE* deviceToUse, IOTHUB_CLIEN
 
     // arrange
     IOTHUB_CLIENT_HANDLE iotHubClientHandle;
-    EXPECTED_SEND_DATA* sendData;
+    D2C_MESSAGE_HANDLE d2cMessage;
 
     // Create the IoT Hub Data
     iotHubClientHandle = client_connect_to_hub(deviceToUse, protocol);
 
     // Send the Event from the client
-    sendData = client_create_and_send_d2c(iotHubClientHandle);
+    d2cMessage = client_create_and_send_d2c(iotHubClientHandle);
 
     // Wait for confirmation that the event was recevied
-    bool dataWasRecv = client_wait_for_d2c_confirmation(sendData);
+    bool dataWasRecv = client_wait_for_d2c_confirmation(d2cMessage);
     ASSERT_IS_TRUE_WITH_MSG(dataWasRecv, "Failure sending data to IotHub"); // was received by the callback...
 
     // close the client connection
@@ -458,13 +469,10 @@ static void send_event_test(IOTHUB_PROVISIONED_DEVICE* deviceToUse, IOTHUB_CLIEN
     (void)platform_init();
 
     // Waigt for the message to arrive
-    service_wait_for_d2c_event_arrival(deviceToUse, sendData);
-
-    // assert
-    ASSERT_IS_TRUE_WITH_MSG(sendData->wasFound, "Failure retrieving data that was sent to eventhub"); // was found is written by the callback...
+    service_wait_for_d2c_event_arrival(deviceToUse, d2cMessage);
 
     // cleanup
-    EventData_Destroy(sendData);
+    destroy_d2c_message_handle(d2cMessage);
 
 
 }

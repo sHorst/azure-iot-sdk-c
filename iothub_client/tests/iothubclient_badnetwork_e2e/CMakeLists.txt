@@ -11,13 +11,16 @@ set(${theseTestsName}_test_files
     ${theseTestsName}.c
     ../common_e2e/iothubclient_common_e2e.c
     badnetwork.c
+    network_disconnect.c
 )
 
 
 set(${theseTestsName}_nuget_c_files
-        ${theseTestsName}.c
+    ${theseTestsName}.c
      ../common_e2e/iothubclient_common_e2e.c
      ../../../certs/certs.c
+    badnetwork.c
+    network_disconnect.c
 )
 
 set(${theseTestsName}_c_files
@@ -27,6 +30,7 @@ set(${theseTestsName}_c_files
 set(${theseTestsName}_h_files
     ../common_e2e/iothubclient_common_e2e.h
     badnetwork.h
+    network_disconnect.h
 )
 
 include_directories(../common_e2e)
@@ -43,6 +47,7 @@ if(WIN32)
 			iothub_client
 			iothub_client_amqp_transport
 			iothub_client_mqtt_transport
+			iothub_client_http_transport
 			iothub_service_client
 			aziotsharedutil
 			rpcrt4			
@@ -50,6 +55,7 @@ if(WIN32)
 		linkSharedUtil(${theseTestsName}_dll)
 		linkUAMQP(${theseTestsName}_dll)
 		linkMqttLibrary(${theseTestsName}_dll)
+		linkHttp(${theseTestsName}_dll)
 	endif()
 	
 	if(TARGET ${theseTestsName}_exe)
@@ -58,6 +64,7 @@ if(WIN32)
 			iothub_client
 			iothub_client_amqp_transport
 			iothub_client_mqtt_transport
+			iothub_client_http_transport
 			iothub_service_client
 			aziotsharedutil
 			rpcrt4			
@@ -65,6 +72,7 @@ if(WIN32)
 		linkSharedUtil(${theseTestsName}_exe)
 		linkUAMQP(${theseTestsName}_exe)	
 		linkMqttLibrary(${theseTestsName}_exe)
+		linkHttp(${theseTestsName}_exe)
 	endif()
 
 	if(TARGET ${theseTestsName}_nuget_exe)
@@ -94,6 +102,7 @@ else()
 			iothub_client
 			iothub_client_amqp_transport
 			iothub_client_mqtt_transport
+			iothub_client_http_transport
 			iothub_service_client
 			aziotsharedutil
 		)
