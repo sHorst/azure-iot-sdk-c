@@ -42,3 +42,9 @@ void disconnect_create_send_reconnect(IOTHUB_PROVISIONED_DEVICE* deviceToUse, IO
     destroy_d2c_message_handle(d2cMessage);
 }
 
+void confirm_disconnect_wait_reconnect(IOTHUB_PROVISIONED_DEVICE* deviceToUse, IOTHUB_CLIENT_TRANSPORT_PROVIDER protocol)
+{
+    (void)deviceToUse, protocol;
+}
+
+

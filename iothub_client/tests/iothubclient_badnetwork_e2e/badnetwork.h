@@ -12,6 +12,7 @@ extern "C" {
 #endif
 
     extern void disconnect_create_send_reconnect(IOTHUB_PROVISIONED_DEVICE* deviceToUse, IOTHUB_CLIENT_TRANSPORT_PROVIDER protocol);
+    extern void confirm_disconnect_wait_reconnect(IOTHUB_PROVISIONED_DEVICE* deviceToUse, IOTHUB_CLIENT_TRANSPORT_PROVIDER protocol);
 
 #ifdef __cplusplus
 }
