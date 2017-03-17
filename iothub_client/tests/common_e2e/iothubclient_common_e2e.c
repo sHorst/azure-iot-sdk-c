@@ -46,7 +46,7 @@ IOTHUB_ACCOUNT_INFO_HANDLE g_iothubAcctInfo = NULL;
 
 #define IOTHUB_COUNTER_MAX           10
 #define IOTHUB_TIMEOUT_SEC           1000
-#define MAX_CLOUD_TRAVEL_TIME        60.0
+#define MAX_CLOUD_TRAVEL_TIME        20.0
 
 TEST_DEFINE_ENUM_TYPE(IOTHUB_TEST_CLIENT_RESULT, IOTHUB_TEST_CLIENT_RESULT_VALUES);
 TEST_DEFINE_ENUM_TYPE(IOTHUB_CLIENT_RESULT, IOTHUB_CLIENT_RESULT_VALUES);
@@ -425,6 +425,11 @@ bool client_wait_for_d2c_confirmation(D2C_MESSAGE_HANDLE d2cMessage)
 
 }
 
+bool client_received_confirmation(D2C_MESSAGE_HANDLE d2cMessage)
+{
+    return ((EXPECTED_SEND_DATA*)d2cMessage)->dataWasRecv;
+}
+
 void service_wait_for_d2c_event_arrival(IOTHUB_PROVISIONED_DEVICE* deviceToUse, D2C_MESSAGE_HANDLE d2cMessage)
 {
     EXPECTED_SEND_DATA* sendData = (EXPECTED_SEND_DATA*)d2cMessage;
@@ -438,6 +443,11 @@ void service_wait_for_d2c_event_arrival(IOTHUB_PROVISIONED_DEVICE* deviceToUse, 
     ASSERT_IS_TRUE_WITH_MSG(sendData->wasFound, "Failure retrieving data that was sent to eventhub"); // was found is written by the callback...
 
     IoTHubTest_Deinit(iotHubTestHandle);
+}
+
+bool service_received_the_message(D2C_MESSAGE_HANDLE d2cMessage)
+{
+    return ((EXPECTED_SEND_DATA*)d2cMessage)->wasFound;
 }
 
 void destroy_d2c_message_handle(D2C_MESSAGE_HANDLE d2cMessage)

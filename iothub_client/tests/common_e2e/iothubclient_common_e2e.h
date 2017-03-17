@@ -26,7 +26,9 @@ typedef void* D2C_MESSAGE_HANDLE;
 extern IOTHUB_CLIENT_HANDLE client_connect_to_hub(IOTHUB_PROVISIONED_DEVICE* deviceToUse, IOTHUB_CLIENT_TRANSPORT_PROVIDER protocol);
 extern D2C_MESSAGE_HANDLE client_create_and_send_d2c(IOTHUB_CLIENT_HANDLE iotHubClientHandle);
 extern bool client_wait_for_d2c_confirmation(D2C_MESSAGE_HANDLE d2cMessage);
+extern bool client_received_confirmation(D2C_MESSAGE_HANDLE d2cMessage);
 extern void service_wait_for_d2c_event_arrival(IOTHUB_PROVISIONED_DEVICE* deviceToUse, D2C_MESSAGE_HANDLE d2cMessage);
+extern bool service_received_the_message(D2C_MESSAGE_HANDLE d2cMessage);
 extern void destroy_d2c_message_handle(D2C_MESSAGE_HANDLE d2cMessage);
 
 

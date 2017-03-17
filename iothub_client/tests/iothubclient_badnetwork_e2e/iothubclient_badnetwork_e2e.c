@@ -7,6 +7,8 @@
 #include "iothubtransportamqp.h"
 #include "iothubtransporthttp.h"
 #include "iothubtransportmqtt.h"
+#include "iothubtransportamqp_websockets.h"
+#include "iothubtransportmqtt_websockets.h"
 #include "iothubclient_common_e2e.h"
 
 static TEST_MUTEX_HANDLE g_dllByDll;
@@ -29,56 +31,35 @@ BEGIN_TEST_SUITE(iothubclient_badnetwork_e2e)
     {
     }
 
-    TEST_FUNCTION(IotHub_BadNetwork_D2C_SingleMessage_DisconnectedBeforeClientCreated_ReconnectedAfterMessageSent_SAS_AMQP)
-    {
-        disconnect_create_send_reconnect(IoTHubAccount_GetSASDevice(g_iothubAcctInfo), AMQP_Protocol);
-    }
-
-    TEST_FUNCTION(IotHub_BadNetwork_D2C_SingleMessage_DisconnectedBeforeClientCreated_ReconnectedAfterMessageSent_SAS_MQTT)
-    {
-        disconnect_create_send_reconnect(IoTHubAccount_GetSASDevice(g_iothubAcctInfo), MQTT_Protocol);
-    }
-
-    TEST_FUNCTION(IotHub_BadNetwork_D2C_SingleMessage_DisconnectedBeforeClientCreated_ReconnectedAfterMessageSent_SAS_HTTP)
-    {
-        disconnect_create_send_reconnect(IoTHubAccount_GetSASDevice(g_iothubAcctInfo), HTTP_Protocol);
-    }
-
-    TEST_FUNCTION(IotHub_BadNetwork_D2C_SingleMessage_DisconnectedBeforeClientCreated_ReconnectedAfterMessageSent_x509_AMQP)
-    {
-        ASSERT_FAIL("this test fails with lots of spew");
-        //disconnect_create_send_reconnect(IoTHubAccount_GetX509Device(g_iothubAcctInfo), AMQP_Protocol);
-    }
-
-    TEST_FUNCTION(IotHub_BadNetwork_D2C_SingleMessage_DisconnectedBeforeClientCreated_ReconnectedAfterMessageSent_x509_MQTT)
-    {
-        disconnect_create_send_reconnect(IoTHubAccount_GetX509Device(g_iothubAcctInfo), MQTT_Protocol);
-    }
-
-    TEST_FUNCTION(IotHub_BadNetwork_D2C_SingleMessage_DisconnectedBeforeClientCreated_ReconnectedAfterMessageSent_x509_HTTP)
-    {
-        disconnect_create_send_reconnect(IoTHubAccount_GetX509Device(g_iothubAcctInfo), HTTP_Protocol);
-    }
-
-    TEST_FUNCTION(IotHub_BadNetwork_D2C_MultipleMessages_DisconnectedAfterFirstConfirmmation_Reconnected30SecondsLater_SAS_AMQP)
-    {
-        confirm_disconnect_wait_reconnect(IoTHubAccount_GetSASDevice(g_iothubAcctInfo), AMQP_Protocol);
+    
+#define TEST_FUNCTION_SAS(name, longprotocol,shortprotocol) \
+    TEST_FUNCTION(IotHub_BadNetwork_##name##_SAS_##shortprotocol) \
+    { \
+        name(IoTHubAccount_GetSASDevice(g_iothubAcctInfo), longprotocol); \
     }
     
-    TEST_FUNCTION(IotHub_BadNetwork_D2C_MultipleMessages_DisconnectedAfterFirstConfirmmation_Reconnected30SecondsLater_SAS_MQTT)
-    {
-        confirm_disconnect_wait_reconnect(IoTHubAccount_GetSASDevice(g_iothubAcctInfo), MQTT_Protocol);
+#define TEST_FUNCTION_X509(name, longprotocol,shortprotocol) \
+    TEST_FUNCTION(IotHub_BadNetwork_##name##_X509_##shortprotocol) \
+    { \
+        name(IoTHubAccount_GetX509Device(g_iothubAcctInfo), longprotocol); \
     }
+
+#define MATRIX_TEST_FUNCTION(name)  \
+    TEST_FUNCTION_SAS(name, MQTT_Protocol, MQTT) \
+    TEST_FUNCTION_X509(name, MQTT_Protocol, MQTT) \
+    TEST_FUNCTION_SAS(name, MQTT_WebSocket_Protocol, MQTT_WS) \
+    TEST_FUNCTION_X509(name, MQTT_WebSocket_Protocol, MQTT_WS) \
+    TEST_FUNCTION_SAS(name, AMQP_Protocol, AMQP) \
+    TEST_FUNCTION_X509(name, AMQP_Protocol, AMQP) \
+    TEST_FUNCTION_SAS(name, AMQP_Protocol_over_WebSocketsTls, AMQP_WS) \
+    TEST_FUNCTION_X509(name, AMQP_Protocol_over_WebSocketsTls, AMQP_WS) \
+    TEST_FUNCTION_SAS(name, HTTP_Protocol, HTTP) \
+    TEST_FUNCTION_X509(name, HTTP_Protocol, HTTP)
+
+    MATRIX_TEST_FUNCTION(disconnect_create_send_reconnect);
+    MATRIX_TEST_FUNCTION(disconnect_after_first_confirmation_then_close);
+    MATRIX_TEST_FUNCTION(send_disconnect_send_reconnect_etc);
     
-    TEST_FUNCTION(IotHub_BadNetwork_D2C_MultipleMessages_DisconnectedAfterFirstConfirmmation_Reconnected30SecondsLater_SAS_HTTP)
-    {
-        confirm_disconnect_wait_reconnect(IoTHubAccount_GetSASDevice(g_iothubAcctInfo), HTTP_Protocol);
-    }
-
-    TEST_FUNCTION(IotHub_BadNetwork_D2C_MultipleMessages_SendDisconnectSendReconnectSendDisconnectSendReconnect)
-    {
-
-    }
 
 END_TEST_SUITE(iothubclient_badnetwork_e2e)
 
