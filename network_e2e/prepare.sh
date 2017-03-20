@@ -3,9 +3,10 @@
 # Copyright (c) Microsoft. All rights reserved.
 # Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
+set -e
 script_dir=$(cd "$(dirname "$0")" && pwd)
 build_root=$(cd "${script_dir}/.." && pwd)
-build_folder=/bin
+build_folder=$build_root/cmake/linux_network_e2e
 
 # build our docker image
 docker build -t jenkins-network-e2e:latest $(script_dir)\Dockerfile.Linux

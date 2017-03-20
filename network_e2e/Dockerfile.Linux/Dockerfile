@@ -4,7 +4,7 @@
 ############################################################
 
 # Set the base image to Ubuntu
-FROM aziotbld:linux-c-ubuntu-16.04
+FROM aziotbld/linux-c-ubuntu-16.04
 
 # Add tools for network connect/disconnect tests
 RUN apt-get install --fix-missing -y \
