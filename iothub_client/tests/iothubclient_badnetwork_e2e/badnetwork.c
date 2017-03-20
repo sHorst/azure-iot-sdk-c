@@ -15,7 +15,10 @@ void disconnect_create_send_reconnect(IOTHUB_PROVISIONED_DEVICE* deviceToUse, IO
     D2C_MESSAGE_HANDLE d2cMessage;
 
     // Disconnect
-    network_disconnect();
+    if (0 != network_disconnect())
+    {
+        ASSERT_FAIL("network disconnect failed");
+    }
 
     // create
     iotHubClientHandle = client_connect_to_hub(deviceToUse, protocol);
@@ -24,7 +27,10 @@ void disconnect_create_send_reconnect(IOTHUB_PROVISIONED_DEVICE* deviceToUse, IO
     d2cMessage = client_create_and_send_d2c(iotHubClientHandle);
 
     // reconnect
-    network_reconnect();
+    if (0 != network_reconnect())
+    {
+        ASSERT_FAIL("network reconnect failed");
+    }
 
     // Wait for confirmation that the event was recevied
     bool dataWasRecv = client_wait_for_d2c_confirmation(d2cMessage);
@@ -69,7 +75,10 @@ void disconnect_after_first_confirmation_then_close(IOTHUB_PROVISIONED_DEVICE* d
     client_wait_for_d2c_confirmation(d2cMessage[0]);
 
     // disconnect and sleep for a while
-    network_disconnect();
+    if (0 != network_disconnect())
+    {
+        ASSERT_FAIL("network disconnect failed");
+    }
 
     // Verify that we haven't received all the confirmations.  Otherwise this test is invalid.  We want some pending confirmations
     printf("making sure we have at least one unconfirmed message before reconnecting\n");
@@ -96,7 +105,10 @@ void disconnect_after_first_confirmation_then_close(IOTHUB_PROVISIONED_DEVICE* d
     }
 
     // finally reconnect 
-    network_reconnect();
+    if (0 != network_reconnect())
+    {
+        ASSERT_FAIL("network reconnect failed");
+    }
 }
 
 #define SLEEP_TIME_BETWEEN_STEPS 2000
@@ -115,14 +127,20 @@ void send_disconnect_send_reconnect_etc(IOTHUB_PROVISIONED_DEVICE* deviceToUse, 
         d2cMessage[i] = client_create_and_send_d2c(iotHubClientHandle);
         ThreadAPI_Sleep(SLEEP_TIME_BETWEEN_STEPS);
         
-        network_disconnect();
+        if (0 != network_disconnect())
+        {
+            ASSERT_FAIL("network disconnect failed");
+        }
         ThreadAPI_Sleep(SLEEP_TIME_BETWEEN_STEPS);
 
         i++;
         d2cMessage[i] = client_create_and_send_d2c(iotHubClientHandle);
         ThreadAPI_Sleep(SLEEP_TIME_BETWEEN_STEPS);
         
-        network_reconnect();
+        if (0 != network_reconnect())
+        {
+            ASSERT_FAIL("network reconnect failed");
+        }
         ThreadAPI_Sleep(SLEEP_TIME_BETWEEN_STEPS);
     }
     

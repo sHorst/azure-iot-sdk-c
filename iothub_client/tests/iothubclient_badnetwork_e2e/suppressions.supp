@@ -32,6 +32,21 @@
 	fun:_IO_file_xsputn@@GLIBC_2.2.5
 	fun:puts
 }
+ {
+	No docker leaks
+	Memcheck:Leak
+	obj:/usr/bin/docker
+}
+{
+	No docker address errors
+	Memcheck:Addr8
+	obj:/usr/bin/docker
+}
+{
+	No docker conditional jump errors
+	Memcheck:Cond
+	obj:/usr/bin/docker
+}
 
 
 

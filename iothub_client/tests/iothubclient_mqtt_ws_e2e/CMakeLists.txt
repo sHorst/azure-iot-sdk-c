@@ -86,7 +86,7 @@ else()
             aziotsharedutil
         )
         target_link_libraries(${theseTestsName}_exe pthread uuid)
-        linkSharedUtil(${theseTestsName}_dll)
+        linkSharedUtil(${theseTestsName}_exe)
         linkUAMQP(${theseTestsName}_exe)
         linkMqttLibrary(${theseTestsName}_exe)
     endif()

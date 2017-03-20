@@ -18,7 +18,10 @@ int network_disconnect()
     // TODO
 #elif defined(__linux__)
     result = system("docker network disconnect bridge ${HOSTNAME}");
-    ASSERT_ARE_EQUAL_WITH_MSG(int, 0, result, "docker call to disconnect network failed");
+    if (result != 0)
+    {
+        printf("docker network disconnect returned %d\n",result);
+    }
     return result; 
 #else
     ASSERT_FAIL("Network disconnect not implemented on this OS\n");
@@ -36,7 +39,10 @@ int network_reconnect()
     // TODO
 #elif defined(__linux__)
     result = system("docker network connect bridge ${HOSTNAME}");
-    ASSERT_ARE_EQUAL_WITH_MSG(int, 0, result, "docker call to connect network failed");
+    if (result != 0)
+    {
+        printf("docker network connect returned %d\n",result);
+    }
     return result;
 #else
     ASSERT_FAIL("Network connecting not implemented on this OS\n");
