@@ -6,10 +6,11 @@ cmake_minimum_required(VERSION 2.8.11)
 
 compileAsC11()
 set(theseTestsName iothubclient_badnetwork_e2e)
+set(COMMON_E2E_DIR ../../../iothub_client/tests/common_e2e)
 
 set(${theseTestsName}_test_files
     ${theseTestsName}.c
-    ../common_e2e/iothubclient_common_e2e.c
+    ${COMMON_E2E_DIR}/iothubclient_common_e2e.c
     badnetwork.c
     network_disconnect.c
 )
@@ -17,7 +18,7 @@ set(${theseTestsName}_test_files
 
 set(${theseTestsName}_nuget_c_files
     ${theseTestsName}.c
-     ../common_e2e/iothubclient_common_e2e.c
+    ${COMMON_E2E_DIR}/iothubclient_common_e2e.c
      ../../../certs/certs.c
     badnetwork.c
     network_disconnect.c
@@ -28,14 +29,12 @@ set(${theseTestsName}_c_files
 )
 
 set(${theseTestsName}_h_files
-    ../common_e2e/iothubclient_common_e2e.h
+    ${COMMON_E2E_DIR}/iothubclient_common_e2e.h
     badnetwork.h
     network_disconnect.h
 )
 
-include_directories(../common_e2e)
-include_directories(${IOTHUB_TEST_INC_FOLDER})
-include_directories(${IOTHUB_SERVICE_CLIENT_INC_FOLDER})
+include_directories(${COMMON_E2E_DIR})
 
 file(COPY suppressions.supp DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 build_c_test_artifacts(${theseTestsName} ON "tests/E2ETests" VALGRIND_SUPPRESSIONS_FILE suppressions.supp)

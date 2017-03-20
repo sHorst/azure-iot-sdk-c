@@ -4,7 +4,7 @@
 #ifndef _BADNETWORK_H_
 #define _BADNETWORK_H_
 
-#include "iothub_client_ll.h"
+#include "iothub_client.h"
 #include "iothub_account.h"
 
 #ifdef __cplusplus
