@@ -44,12 +44,27 @@ BEGIN_TEST_SUITE(iothubclient_badnetwork_e2e)
 
     TEST_FUNCTION(IotHub_BadNetwork_disconnect_after_first_confirmation_then_close_SAS)
     {
-        disconnect_after_first_confirmation_then_close(IoTHubAccount_GetSASDevice(g_iothubAcctInfo),g_protocol);
+        //disconnect_after_first_confirmation_then_close(IoTHubAccount_GetSASDevice(g_iothubAcctInfo),g_protocol);
     }
 
     TEST_FUNCTION(IotHub_BadNetwork_send_disconnect_send_reconnect_etc_SAS)
     {
-        send_disconnect_send_reconnect_etc(IoTHubAccount_GetSASDevice(g_iothubAcctInfo),g_protocol);
+        //send_disconnect_send_reconnect_etc(IoTHubAccount_GetSASDevice(g_iothubAcctInfo),g_protocol);
+    }
+    
+    TEST_FUNCTION(IotHub_BadNetwork_disconnect_create_send_reconnect_X509)
+    {
+        // disconnect_create_send_reconnect(IoTHubAccount_GetX509Device(g_iothubAcctInfo),g_protocol);
+    }
+
+    TEST_FUNCTION(IotHub_BadNetwork_disconnect_after_first_confirmation_then_close_X509)
+    {
+        //disconnect_after_first_confirmation_then_close(IoTHubAccount_GetX509Device(g_iothubAcctInfo),g_protocol);
+    }
+
+    TEST_FUNCTION(IotHub_BadNetwork_send_disconnect_send_reconnect_etc_X509)
+    {
+        //send_disconnect_send_reconnect_etc(IoTHubAccount_GetX509Device(g_iothubAcctInfo),g_protocol);
     }
 
 END_TEST_SUITE(iothubclient_badnetwork_e2e)

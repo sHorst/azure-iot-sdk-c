@@ -155,6 +155,8 @@ static int retrieveConnStringInfo(IOTHUB_ACCOUNT_INFO* accountInfo)
     }
     else
     {
+        printf("string = [%s]\n",accountInfo->connString);
+        printf("range = %d-%d\n",beginHost,endHost);
         if ((accountInfo->iothubName = (char*)malloc(endHost - beginHost + 1)) == NULL)
         {
             LogError("Failure allocating iothubName.\r\n");

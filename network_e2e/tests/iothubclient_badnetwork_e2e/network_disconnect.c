@@ -17,7 +17,7 @@ int network_disconnect()
 #if defined(WIN32)
     // TODO
 #elif defined(__linux__)
-    result = system("docker network disconnect bridge ${HOSTNAME}");
+    result = system("docker network disconnect YoYoNet ${HOSTNAME}");
     if (result != 0)
     {
         printf("docker network disconnect returned %d\n",result);
@@ -38,7 +38,7 @@ int network_reconnect()
 #if defined(WIN32)
     // TODO
 #elif defined(__linux__)
-    result = system("docker network connect bridge ${HOSTNAME}");
+    result = system("docker network connect YoYoNet ${HOSTNAME}");
     if (result != 0)
     {
         printf("docker network connect returned %d\n",result);
